@@ -4,7 +4,6 @@ import { Dirent } from 'fs';
 import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
-  // Añadimos un log para confirmar que la extensión se activa correctamente.
   console.log("¡La extensión 'Folder Structure Viewer' se está activando!");
 
   const disposable = vscode.commands.registerCommand(
@@ -21,17 +20,14 @@ export function activate(context: vscode.ExtensionContext) {
       }
       const includeFiles = contentType.label === 'Carpetas y archivos';
 
-      // --- NUEVA FUNCIONALIDAD: Elegir nombre de archivo ---
-      // Usamos showInputBox para que el usuario pueda nombrar el archivo.
       const fileName = await vscode.window.showInputBox({
         prompt: '¿Cómo quieres llamar al archivo de salida?',
-        value: 'estructura.txt', // Valor por defecto
+        value: 'estructura.txt',
         validateInput: (text) => {
-          return text ? null : 'El nombre del archivo no puede estar vacío.'; // Validación simple
+          return text ? null : 'El nombre del archivo no puede estar vacío.';
         },
       });
 
-      // Si el usuario presiona 'Escape' o deja el campo vacío, cancelamos la operación.
       if (!fileName) {
         return;
       }
@@ -54,7 +50,6 @@ export function activate(context: vscode.ExtensionContext) {
               ignorePatterns
             );
 
-            // Usamos el nombre de archivo proporcionado por el usuario.
             const outputPath = path.join(selectedFolder.uri.fsPath, fileName);
             await fs.writeFile(outputPath, structure);
 
@@ -65,18 +60,15 @@ export function activate(context: vscode.ExtensionContext) {
 
             progress.report({ increment: 100 });
 
-            // --- NUEVA FUNCIONALIDAD: Notificación con botón para copiar ---
             const relativePath = path.join(selectedFolder.name, fileName);
             const copyAction = 'Copiar al Portapapeles';
 
-            // Mostramos una notificación con un botón de acción.
             vscode.window
               .showInformationMessage(
                 `¡Estructura generada con éxito en: ${relativePath}!`,
                 copyAction
               )
               .then((selection) => {
-                // Si el usuario hace clic en el botón, copiamos el contenido.
                 if (selection === copyAction) {
                   vscode.env.clipboard.writeText(structure);
                   vscode.window.showInformationMessage(
@@ -141,9 +133,6 @@ function getIgnorePatterns(): string[] {
   const userPatterns = userConfig.get<string[]>('ignorePatterns');
   const safeUserPatterns = Array.isArray(userPatterns) ? userPatterns : [];
   const finalPatterns = new Set([...defaultPatterns, ...safeUserPatterns]);
-  // Nos aseguramos de ignorar el propio archivo de salida, sea cual sea su nombre.
-  // Esta es una mejora de robustez.
-  // (Nota: esta lógica se podría mejorar para manejar el nombre dinámico, pero por ahora lo dejamos así)
   finalPatterns.add('estructura.txt');
   return Array.from(finalPatterns);
 }

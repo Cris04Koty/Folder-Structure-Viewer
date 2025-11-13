@@ -3,12 +3,16 @@
   "displayName": "Folder Structure Viewer",
   "description": "Genera un archivo de texto con la estructura de carpetas y archivos de un directorio.",
   "version": "1.0.0",
-  "publisher": "tu-publisher-aqui",
+  "publisher": "cristiandev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Cris04Koty/Folder-Structure-Viewer.git"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": [
-    "Other"
+    "Utilities"
   ],
   "activationEvents": [
     "onCommand:folderStructureViewer.generate"
@@ -36,8 +40,7 @@
   "scripts": {
     "vscode:prepublish": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
-    "package": "vsce package",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node"
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
