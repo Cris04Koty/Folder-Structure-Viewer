@@ -1,0 +1,33 @@
+.vscode/**
+.vscode-test/**
+out/**
+node_modules/**
+src/**
+.gitignore
+.yarnrc
+esbuild.js
+vsc-extension-quickstart.md
+**/tsconfig.json
+**/eslint.config.mjs
+**/*.map
+**/*.ts
+**/.vscode-test.*
+
+# Ignorar todos los archivos por defecto
+**/*
+
+# Incluir solo lo necesario
+!dist/extension.js
+!package.json
+!README.md
+!CHANGELOG.md
+
+# Ignorar archivos de desarrollo
+.vscode/**
+.vscode-test/**
+src/**
+out/**
+node_modules/**
+.gitignore
+tsconfig.json
+esbuild.js

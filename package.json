@@ -1,0 +1,50 @@
+{
+  "name": "folder-structure-viewer",
+  "displayName": "Folder Structure Viewer",
+  "description": "Genera un archivo de texto con la estructura de carpetas y archivos de un directorio.",
+  "version": "1.0.0",
+  "publisher": "tu-publisher-aqui",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:folderStructureViewer.generate"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "folderStructureViewer.generate",
+        "title": "Generar estructura de carpetas (estructura.txt)",
+        "category": "FolderStructure"
+      }
+    ],
+    "configuration": {
+      "title": "Folder Structure Viewer",
+      "properties": {
+        "folderStructureViewer.ignorePatterns": {
+          "type": "array",
+          "default": [],
+          "description": "Nombres de archivos o carpetas a ignorar al generar la estructura. Se suman a los patrones por defecto (.git, node_modules, etc.)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "package": "vsce package",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.80.0",
+    "esbuild": "^0.18.17",
+    "typescript": "^5.1.6",
+    "vsce": "^2.15.0"
+  }
+}
