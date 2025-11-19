@@ -1,33 +1,10 @@
-.vscode/**
-.vscode-test/**
-out/**
-node_modules/**
-src/**
-.gitignore
-.yarnrc
-esbuild.js
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/eslint.config.mjs
-**/*.map
-**/*.ts
-**/.vscode-test.*
-
-# Ignorar todos los archivos por defecto
+# 1. Ignorar todo por defecto para empezar de forma limpia.
 **/*
 
-# Incluir solo lo necesario
-!dist/extension.js
+# 2. Ahora, incluir explícitamente solo lo que necesitamos en el paquete final.
+!dist/**
 !package.json
 !README.md
-!CHANGELOG.md
-
-# Ignorar archivos de desarrollo
-.vscode/**
-.vscode-test/**
-src/**
-out/**
-node_modules/**
-.gitignore
-tsconfig.json
-esbuild.js
+!LICENSE
+!images/icon.png
+!demostracion/demostracionUso.gif
