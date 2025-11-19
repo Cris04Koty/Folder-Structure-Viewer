@@ -2,7 +2,7 @@
   "name": "folder-structure-viewer",
   "displayName": "Folder Structure Viewer",
   "description": "Genera un archivo de texto con la estructura de carpetas y archivos de un directorio.",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "publisher": "cristiandev",
   "repository": {
     "type": "git",
@@ -15,17 +15,43 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:folderStructureViewer.generate"
+    "onCommand:folderStructureViewer.generate",
+    "onCommand:folderStructureViewer.generateFromFileExplorer",
+    "onCommand:folderStructureViewer.copyStructureToClipboard"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "folderStructureViewer.generate",
-        "title": "Generar estructura de carpetas (estructura.txt)",
+        "title": "Generar estructura de carpetas (desde Paleta de Comandos)",
+        "category": "FolderStructure"
+      },
+      {
+        "command": "folderStructureViewer.generateFromFileExplorer",
+        "title": "Generar Estructura en Archivo...",
+        "category": "FolderStructure"
+      },
+      {
+        "command": "folderStructureViewer.copyStructureToClipboard",
+        "title": "Copiar Estructura al Portapapeles",
         "category": "FolderStructure"
       }
     ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "folderStructureViewer.generateFromFileExplorer",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@5"
+        },
+        {
+          "command": "folderStructureViewer.copyStructureToClipboard",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@5"
+        }
+      ]
+    },
     "configuration": {
       "title": "Folder Structure Viewer",
       "properties": {

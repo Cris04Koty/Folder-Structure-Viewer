@@ -3,91 +3,139 @@ import * as fs from 'fs/promises';
 import { Dirent } from 'fs';
 import * as path from 'path';
 
+// El punto de entrada principal de la extensión
 export function activate(context: vscode.ExtensionContext) {
-  console.log("¡La extensión 'Folder Structure Viewer' se está activando!");
+  console.log('¡Folder Structure Viewer v2.0.0 está activo!');
 
-  const disposable = vscode.commands.registerCommand(
+  // 1. Comando original (desde la Paleta de Comandos)
+  const commandPaletteCommand = vscode.commands.registerCommand(
     'folderStructureViewer.generate',
     async () => {
+      // Este comando no recibe una carpeta, así que debemos preguntarle al usuario
       const selectedFolder = await selectWorkspaceFolder();
-      if (!selectedFolder) {
-        return;
+      if (selectedFolder) {
+        runGenerator(selectedFolder.uri, 'file');
       }
+    }
+  );
 
-      const contentType = await askContentType();
-      if (!contentType) {
-        return;
-      }
-      const includeFiles = contentType.label === 'Carpetas y archivos';
+  // 2. Nuevo comando: Generar archivo desde el Explorador (clic derecho)
+  const generateFileCommand = vscode.commands.registerCommand(
+    'folderStructureViewer.generateFromFileExplorer',
+    (folderUri: vscode.Uri) => {
+      // Este comando recibe la URI de la carpeta directamente del clic derecho
+      runGenerator(folderUri, 'file');
+    }
+  );
 
-      const fileName = await vscode.window.showInputBox({
-        prompt: '¿Cómo quieres llamar al archivo de salida?',
-        value: 'estructura.txt',
-        validateInput: (text) => {
-          return text ? null : 'El nombre del archivo no puede estar vacío.';
-        },
-      });
+  // 3. Nuevo comando: Copiar al portapapeles desde el Explorador (clic derecho)
+  const copyToClipboardCommand = vscode.commands.registerCommand(
+    'folderStructureViewer.copyStructureToClipboard',
+    (folderUri: vscode.Uri) => {
+      runGenerator(folderUri, 'clipboard');
+    }
+  );
 
-      if (!fileName) {
-        return;
-      }
+  // Registramos todos los comandos
+  context.subscriptions.push(
+    commandPaletteCommand,
+    generateFileCommand,
+    copyToClipboardCommand
+  );
+}
 
-      const ignorePatterns = getIgnorePatterns();
+/**
+ * Función central que maneja toda la lógica de generación.
+ * @param folderUri La URI de la carpeta sobre la que actuar.
+ * @param mode 'file' para generar un archivo, 'clipboard' para copiar al portapapeles.
+ */
+async function runGenerator(folderUri: vscode.Uri, mode: 'file' | 'clipboard') {
+  try {
+    const contentType = await askContentType();
+    if (!contentType) return; // Usuario canceló
 
-      try {
-        vscode.window.withProgress(
-          {
-            location: vscode.ProgressLocation.Notification,
-            title: 'Generando estructura de carpetas...',
-            cancellable: false,
-          },
-          async (progress) => {
-            progress.report({ increment: 0 });
+    const includeFiles = contentType.label === 'Carpetas y archivos';
+    const ignorePatterns = getIgnorePatterns();
 
-            const structure = await generateDirectoryStructure(
-              selectedFolder.uri.fsPath,
-              includeFiles,
-              ignorePatterns
-            );
+    // Mostramos una notificación de progreso mientras trabajamos
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'Generando estructura de carpetas...',
+        cancellable: false,
+      },
+      async (progress) => {
+        progress.report({ increment: 0 });
 
-            const outputPath = path.join(selectedFolder.uri.fsPath, fileName);
+        const structure = await generateDirectoryStructure(
+          folderUri.fsPath,
+          includeFiles,
+          ignorePatterns
+        );
+
+        // Decidimos qué hacer basándonos en el modo
+        if (mode === 'file') {
+          const fileName = await vscode.window.showInputBox({
+            prompt: '¿Cómo quieres llamar al archivo de salida?',
+            value: 'estructura.txt',
+            validateInput: (text) =>
+              text ? null : 'El nombre no puede estar vacío.',
+          });
+
+          if (fileName) {
+            const outputPath = path.join(folderUri.fsPath, fileName);
             await fs.writeFile(outputPath, structure);
-
             const fileUri = vscode.Uri.file(outputPath);
             await vscode.window.showTextDocument(
               await vscode.workspace.openTextDocument(fileUri)
             );
 
-            progress.report({ increment: 100 });
-
-            const relativePath = path.join(selectedFolder.name, fileName);
-            const copyAction = 'Copiar al Portapapeles';
-
-            vscode.window
-              .showInformationMessage(
-                `¡Estructura generada con éxito en: ${relativePath}!`,
-                copyAction
-              )
-              .then((selection) => {
-                if (selection === copyAction) {
-                  vscode.env.clipboard.writeText(structure);
-                  vscode.window.showInformationMessage(
-                    '¡Estructura copiada al portapapeles!'
-                  );
-                }
-              });
+            const relativePath = path.join(
+              path.basename(folderUri.fsPath),
+              fileName
+            );
+            showSuccessNotification(
+              structure,
+              `¡Estructura guardada en: ${relativePath}!`
+            );
           }
-        );
-      } catch (error: any) {
-        vscode.window.showErrorMessage(
-          `Error al generar la estructura: ${error.message}`
+        } else if (mode === 'clipboard') {
+          await vscode.env.clipboard.writeText(structure);
+          vscode.window.showInformationMessage(
+            '¡Estructura copiada al portapapeles!'
+          );
+        }
+
+        progress.report({ increment: 100 });
+      }
+    );
+  } catch (error: any) {
+    vscode.window.showErrorMessage(
+      `Error al generar la estructura: ${error.message}`
+    );
+  }
+}
+
+/**
+ * Muestra una notificación de éxito con un botón para copiar al portapapeles.
+ * @param structure El texto del árbol de directorios.
+ * @param message El mensaje a mostrar.
+ */
+function showSuccessNotification(structure: string, message: string) {
+  const copyAction = 'Copiar al Portapapeles';
+  vscode.window
+    .showInformationMessage(message, copyAction)
+    .then((selection) => {
+      if (selection === copyAction) {
+        vscode.env.clipboard.writeText(structure);
+        vscode.window.showInformationMessage(
+          '¡Estructura copiada al portapapeles!'
         );
       }
-    }
-  );
-
-  context.subscriptions.push(disposable);
+    });
 }
+
+// --- Las funciones auxiliares de abajo no han cambiado ---
 
 async function selectWorkspaceFolder(): Promise<
   vscode.WorkspaceFolder | undefined
