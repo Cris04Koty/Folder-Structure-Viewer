@@ -2,16 +2,14 @@ import * as vscode from 'vscode';
 import * as fs from 'fs/promises';
 import { Dirent } from 'fs';
 import * as path from 'path';
+import { showExclusionWebview } from './webview';
 
-// El punto de entrada principal de la extensión
 export function activate(context: vscode.ExtensionContext) {
   console.log('¡Folder Structure Viewer v2.0.0 está activo!');
 
-  // 1. Comando original (desde la Paleta de Comandos)
   const commandPaletteCommand = vscode.commands.registerCommand(
     'folderStructureViewer.generate',
     async () => {
-      // Este comando no recibe una carpeta, así que debemos preguntarle al usuario
       const selectedFolder = await selectWorkspaceFolder();
       if (selectedFolder) {
         runGenerator(selectedFolder.uri, 'file');
@@ -19,16 +17,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  // 2. Nuevo comando: Generar archivo desde el Explorador (clic derecho)
   const generateFileCommand = vscode.commands.registerCommand(
     'folderStructureViewer.generateFromFileExplorer',
     (folderUri: vscode.Uri) => {
-      // Este comando recibe la URI de la carpeta directamente del clic derecho
       runGenerator(folderUri, 'file');
     }
   );
 
-  // 3. Nuevo comando: Copiar al portapapeles desde el Explorador (clic derecho)
   const copyToClipboardCommand = vscode.commands.registerCommand(
     'folderStructureViewer.copyStructureToClipboard',
     (folderUri: vscode.Uri) => {
@@ -36,7 +31,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  // Registramos todos los comandos
   context.subscriptions.push(
     commandPaletteCommand,
     generateFileCommand,
@@ -44,20 +38,35 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-/**
- * Función central que maneja toda la lógica de generación.
- * @param folderUri La URI de la carpeta sobre la que actuar.
- * @param mode 'file' para generar un archivo, 'clipboard' para copiar al portapapeles.
- */
 async function runGenerator(folderUri: vscode.Uri, mode: 'file' | 'clipboard') {
   try {
     const contentType = await askContentType();
-    if (!contentType) return; // Usuario canceló
+    if (!contentType) return;
 
     const includeFiles = contentType.label === 'Carpetas y archivos';
-    const ignorePatterns = getIgnorePatterns();
+    
+    let ignorePatterns = getIgnorePatterns();
 
-    // Mostramos una notificación de progreso mientras trabajamos
+    const excludeOption = await vscode.window.showQuickPick(
+      [
+        { label: 'No, generar directamente', detail: 'Usa la configuración por defecto' },
+        { label: 'Sí, elegir carpetas a excluir', detail: 'Abre una ventana para seleccionar qué ocultar' }
+      ],
+      { placeHolder: '¿Deseas excluir alguna carpeta específica de la estructura?' }
+    );
+
+    if (!excludeOption) return;
+
+    if (excludeOption.label === 'Sí, elegir carpetas a excluir') {
+      
+      const userExcludedPaths = await showExclusionWebview(folderUri, ignorePatterns);
+
+      if (!userExcludedPaths) return;
+
+      ignorePatterns = [...ignorePatterns, ...userExcludedPaths];
+    }
+
+
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
@@ -73,54 +82,35 @@ async function runGenerator(folderUri: vscode.Uri, mode: 'file' | 'clipboard') {
           ignorePatterns
         );
 
-        // Decidimos qué hacer basándonos en el modo
         if (mode === 'file') {
           const fileName = await vscode.window.showInputBox({
             prompt: '¿Cómo quieres llamar al archivo de salida?',
             value: 'estructura.txt',
-            validateInput: (text) =>
-              text ? null : 'El nombre no puede estar vacío.',
+            validateInput: (text) => (text ? null : 'El nombre no puede estar vacío.'),
           });
 
           if (fileName) {
             const outputPath = path.join(folderUri.fsPath, fileName);
             await fs.writeFile(outputPath, structure);
             const fileUri = vscode.Uri.file(outputPath);
-            await vscode.window.showTextDocument(
-              await vscode.workspace.openTextDocument(fileUri)
-            );
-
-            const relativePath = path.join(
-              path.basename(folderUri.fsPath),
-              fileName
-            );
-            showSuccessNotification(
-              structure,
-              `¡Estructura guardada en: ${relativePath}!`
-            );
+            await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(fileUri));
+            
+            const relativePath = path.join(path.basename(folderUri.fsPath), fileName);
+            showSuccessNotification(structure, `¡Estructura guardada en: ${relativePath}!`);
           }
         } else if (mode === 'clipboard') {
           await vscode.env.clipboard.writeText(structure);
-          vscode.window.showInformationMessage(
-            '¡Estructura copiada al portapapeles!'
-          );
+          vscode.window.showInformationMessage('¡Estructura copiada al portapapeles!');
         }
 
         progress.report({ increment: 100 });
       }
     );
   } catch (error: any) {
-    vscode.window.showErrorMessage(
-      `Error al generar la estructura: ${error.message}`
-    );
+    vscode.window.showErrorMessage(`Error al generar la estructura: ${error.message}`);
   }
 }
 
-/**
- * Muestra una notificación de éxito con un botón para copiar al portapapeles.
- * @param structure El texto del árbol de directorios.
- * @param message El mensaje a mostrar.
- */
 function showSuccessNotification(structure: string, message: string) {
   const copyAction = 'Copiar al Portapapeles';
   vscode.window
@@ -134,8 +124,6 @@ function showSuccessNotification(structure: string, message: string) {
       }
     });
 }
-
-// --- Las funciones auxiliares de abajo no han cambiado ---
 
 async function selectWorkspaceFolder(): Promise<
   vscode.WorkspaceFolder | undefined
@@ -198,14 +186,21 @@ async function generateDirectoryStructure(
       console.warn(`No se pudo leer el directorio: ${dir}. Error:`, error);
       return '';
     }
-    const filteredEntries = entries.filter(
-      (entry) => !ignorePatterns.includes(entry.name)
-    );
+    
+    const filteredEntries = entries.filter((entry) => {
+      const fullPath = path.join(dir, entry.name);
+      
+      const isIgnored = ignorePatterns.includes(entry.name) || ignorePatterns.includes(fullPath);
+      
+      return !isIgnored;
+    });
+
     filteredEntries.sort((a, b) => {
       if (a.isDirectory() && !b.isDirectory()) return -1;
       if (!a.isDirectory() && b.isDirectory()) return 1;
       return a.name.localeCompare(b.name);
     });
+    
     let content = '';
     for (const entry of filteredEntries) {
       if (entry.isDirectory()) {
@@ -217,6 +212,7 @@ async function generateDirectoryStructure(
     }
     return content;
   }
+  
   const rootBaseName = path.basename(rootDir);
   let finalStructure = `${rootBaseName}/\n`;
   finalStructure += await walk(rootDir, '');

@@ -11,13 +11,14 @@
 
 ## Características Principales
 
+- **Exclusión Interactiva de Carpetas:** Visualiza un árbol interactivo de tu proyecto y selecciona con casillas de verificación exactamente qué subcarpetas omitir antes de generar la estructura.
 - **Menú Contextual Rápido:** Accede a todas las funciones con un simple clic derecho sobre cualquier carpeta en el explorador de archivos.
 - **Generación de Árbol de Directorios:** Crea una representación visual y anidada de tus carpetas y archivos.
 - **Copia Directa al Portapapeles:** Genera y copia la estructura de una carpeta al portapapeles con una sola acción.
 - **Contenido Personalizable:** Elige si quieres incluir solo las carpetas o tanto carpetas como archivos.
 - **Nombre de Archivo Flexible:** ¡Tú decides cómo se llamará el archivo de salida!
 - **Ignora Archivos Irrelevantes:** Por defecto, ignora directorios comunes como `.git`, `node_modules`, `dist`, etc.
-- **Patrones de Ignorar Configurables:** Añade tus propias carpetas o archivos a la lista de ignorados.
+- **Patrones de Ignorar Configurables:** Añade tus propias carpetas o archivos a la lista de ignorados mediante la configuración global.
 - **Soporte para Multi-Root Workspaces:** El comando original de la paleta sigue funcionando perfectamente en entornos con múltiples carpetas.
 
 ---
@@ -29,9 +30,12 @@
 Esta es la forma más rápida y directa de usar la extensión.
 
 1.  En el explorador de archivos de VS Code, haz **clic derecho** sobre la carpeta que deseas analizar.
-2.  En el menú contextual, elige una de las dos nuevas opciones:
-    - **`Generar Estructura en Archivo...`**: Te guiará para elegir el contenido y el nombre del archivo de salida.
-    - **`Copiar Estructura al Portapapeles`**: Genera la estructura y la copia directamente, ¡listo para pegar!
+2.  En el menú contextual, elige una de las opciones:
+    - **`Generar Estructura en Archivo...`**
+    - **`Copiar Estructura al Portapapeles`**
+3. Selecciona el tipo de contenido ("Carpetas y archivos" o "Solo carpetas").
+4. Elige si deseas generar la estructura directamente o **excluir carpetas específicas** mediante una interfaz interactiva.
+5. Si elegiste generar un archivo, define el nombre del archivo de salida.
 
 ### Método 2: Desde la Paleta de Comandos
 
@@ -41,21 +45,32 @@ Este método es útil si no tienes una carpeta visible o trabajas en un workspac
     - `Ctrl+Shift+P` en Windows/Linux
     - `Cmd+Shift+P` en macOS
 2.  Escribe y selecciona el comando **`Generar estructura de carpetas (desde Paleta de Comandos)`**.
-3.  Sigue los pasos que te irá pidiendo la extensión.
+3.  Sigue los pasos interactivos en pantalla.
 
-### Demostración
+---
 
-¡Mira qué fácil es usar el nuevo menú contextual!
+## Demostraciones
 
-_(Recomendación: Actualiza tu GIF para mostrar el nuevo flujo de trabajo con clic derecho, ¡es mucho más impresionante!)_
+### 1. Demostración Normal
+Flujo rápido de generación de estructura con configuración por defecto.
 
-![Demostración de la extensión en acción](./demostracion/demostracionUso.gif)
+![Demostración Normal](./demostracion/demostracionNormal.gif)
+
+### 2. Exclusión de Carpetas y Generación de Archivo TXT
+Selección de subcarpetas específicas a ocultar mediante la interfaz interactiva y guardado en archivo de texto.
+
+![Exclusión y Generación de Archivo](./demostracion/TXT-FEV.gif)
+
+### 3. Exclusión de Carpetas y Copiado al Portapapeles
+Selección de carpetas a omitir y copiado directo de la estructura resultante al portapapeles.
+
+![Exclusión y Copiado al Portapapeles](./demostracion/PORTAP-FEV.gif)
 
 ---
 
 ## Configuración
 
-Puedes personalizar los patrones de archivos y carpetas a ignorar.
+Puedes personalizar los patrones de archivos y carpetas a ignorar de manera global.
 
 1.  Abre la configuración de VS Code (`Archivo > Preferencias > Configuración` o `Ctrl+,`).
 2.  Busca `folderStructureViewer.ignorePatterns`.
@@ -77,6 +92,13 @@ Puedes personalizar los patrones de archivos y carpetas a ignorar.
 ---
 
 ## Historial de Cambios (Changelog)
+
+### 3.0.0
+
+- **¡NUEVO!** Interfaz gráfica (Webview) interactiva para explorar y excluir carpetas dinámicamente antes de generar la estructura.
+- **¡NUEVO!** Selección en cascada en la interfaz: al excluir una carpeta padre, se deshabilitan y excluyen automáticamente sus hijos.
+- **¡NUEVO!** Diseño de interfaz nativo con guías de indentación visuales que se adaptan al tema de VS Code.
+- Mejora en el sistema de filtrado interno para procesar de forma precisa rutas absolutas y relativas.
 
 ### 2.0.0
 
