@@ -2,7 +2,7 @@
   "name": "folder-structure-viewer",
   "displayName": "Folder Structure Viewer",
   "description": "Genera un archivo de texto con la estructura de carpetas y archivos de un directorio.",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "publisher": "cristiandev",
   "repository": {
     "type": "git",
