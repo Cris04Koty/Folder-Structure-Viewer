@@ -54,7 +54,7 @@ Este método es útil si no tienes una carpeta visible o trabajas en un workspac
 ### 1. Demostración Normal
 Flujo rápido de generación de estructura con configuración por defecto.
 
-![Demostración Normal](./demostracion/demostracionNormal.gif)
+![Demostración Normal](./demostracion/demostracionUso.gif)
 
 ### 2. Exclusión de Carpetas y Generación de Archivo TXT
 Selección de subcarpetas específicas a ocultar mediante la interfaz interactiva y guardado en archivo de texto.
